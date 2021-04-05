@@ -4,13 +4,16 @@ go 1.15
 
 require (
 	cloud.google.com/go v0.76.0 // indirect
-	github.com/attestantio/go-eth2-client v0.6.21
+	github.com/attestantio/go-eth2-client v0.6.26
 	github.com/aws/aws-sdk-go v1.37.2
+	github.com/ferranbt/fastssz v0.0.0-20210316165225-412ceaa5950e // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
-	github.com/goccy/go-yaml v1.8.8 // indirect
+	github.com/goccy/go-yaml v1.8.9 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
+	github.com/klauspost/cpuid/v2 v2.0.6 // indirect
 	github.com/magiconair/properties v1.8.4 // indirect
+	github.com/minio/sha256-simd v1.0.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pelletier/go-toml v1.8.1 // indirect
 	github.com/pkg/errors v0.9.1
@@ -28,5 +31,6 @@ require (
 	github.com/wealdtech/go-majordomo v1.0.1
 	go.opencensus.io v0.22.6 // indirect
 	golang.org/x/oauth2 v0.0.0-20210201163806-010130855d6c // indirect
+	golang.org/x/sys v0.0.0-20210403161142-5e06dd20ab57 // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
 )
