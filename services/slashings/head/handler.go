@@ -36,16 +36,25 @@ func (s *Service) OnHeadUpdated(
 	}
 	log.Trace().Str("block_root", fmt.Sprintf("%#x", blockRoot)).Msg("Obtained block")
 
-	if len(block.Message.Body.AttesterSlashings) == 0 &&
-		len(block.Message.Body.ProposerSlashings) == 0 {
+	attesterSlashings, err := block.AttesterSlashings()
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to obtain attester slashings")
+	}
+	proposerSlashings, err := block.ProposerSlashings()
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to obtain proposer slashings")
+	}
+
+	if len(attesterSlashings) == 0 &&
+		len(proposerSlashings) == 0 {
 		log.Trace().Msg("No slashings")
 		return
 	}
 
 	// Report on attester slashings.
-	s.attesterSlashings(ctx, block.Message.Body.AttesterSlashings)
+	s.attesterSlashings(ctx, attesterSlashings)
 	// Report on proposer slashings.
-	s.proposerSlashings(ctx, block.Message.Body.ProposerSlashings)
+	s.proposerSlashings(ctx, proposerSlashings)
 }
 
 func (s *Service) attesterSlashings(ctx context.Context, slashings []*spec.AttesterSlashing) {
