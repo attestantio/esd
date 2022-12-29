@@ -50,7 +50,7 @@ import (
 )
 
 // ReleaseVersion is the release version for the code.
-var ReleaseVersion = "1.1.3"
+var ReleaseVersion = "1.2.0"
 
 func main() {
 	os.Exit(main2())
@@ -187,7 +187,11 @@ func initProfiling() error {
 		go func() {
 			log.Info().Str("profile_address", profileAddress).Msg("Starting profile server")
 			runtime.SetMutexProfileFraction(1)
-			if err := http.ListenAndServe(profileAddress, nil); err != nil {
+			server := &http.Server{
+				Addr:              profileAddress,
+				ReadHeaderTimeout: 5 * time.Second,
+			}
+			if err := server.ListenAndServe(); err != nil {
 				log.Warn().Str("profile_address", profileAddress).Err(err).Msg("Failed to run profile server")
 			}
 		}()

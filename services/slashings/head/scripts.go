@@ -30,7 +30,14 @@ func (s *Service) OnProposerSlashed(ctx context.Context, index spec.ValidatorInd
 	log.Trace().Str("script", s.attesterSlashedScript).Msg("Calling script")
 	// #nosec G204
 	cmd := exec.Command(s.proposerSlashedScript, fmt.Sprintf("%d", index))
-	return cmd.Run()
+	err := cmd.Run()
+	if err != nil {
+		if exitErr, isExitErr := err.(*exec.ExitError); isExitErr {
+			log.Warn().Str("stderr", string(exitErr.Stderr)).Msg("Run information")
+		}
+	}
+
+	return err
 }
 
 // OnAttesterSlashed handles an attester slashing event.
@@ -39,8 +46,16 @@ func (s *Service) OnAttesterSlashed(ctx context.Context, index spec.ValidatorInd
 		return nil
 	}
 
-	log.Trace().Str("script", s.attesterSlashedScript).Msg("Calling script")
+	log.Info().Str("script", s.attesterSlashedScript).Msg("Calling script")
 	// #nosec G204
-	cmd := exec.Command(s.attesterSlashedScript, fmt.Sprintf("%d", index))
-	return cmd.Run()
+	cmd := exec.Command("bash", s.attesterSlashedScript, fmt.Sprintf("%d", index))
+	err := cmd.Run()
+	if err != nil {
+		if exitErr, isExitErr := err.(*exec.ExitError); isExitErr {
+			log.Warn().Str("stderr", string(exitErr.Stderr)).Msg("Run information")
+		}
+	}
+
+	return err
+
 }
