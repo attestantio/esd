@@ -54,10 +54,10 @@ require (
 	github.com/prysmaticlabs/go-bitfield v0.0.0-20210809151128-385d8c5e3fb7 // indirect
 	github.com/r3labs/sse/v2 v2.9.0 // indirect
 	github.com/subosito/gotenv v1.4.1 // indirect
-	golang.org/x/net v0.4.0 // indirect
+	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/oauth2 v0.3.0 // indirect
 	golang.org/x/sys v0.6.0 // indirect
-	golang.org/x/text v0.5.0 // indirect
+	golang.org/x/text v0.8.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/api v0.105.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
