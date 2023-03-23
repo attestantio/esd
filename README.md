@@ -45,7 +45,7 @@ go get github.com/attestantio/esd
 
 # Requirements to run `esd`
 ## Beacon node
-`esd` supports Teku, Prysm and Lighthouse beacon nodes.
+`esd` supports all beacon nodes that support the beacon API.
 
 # Configuring `esd`
 The minimal requirements for `esd` are references to the beacon node, for example:
@@ -55,6 +55,18 @@ esd --eth2client.address=localhost:5051
 ```
 
 Here, 'eth2client.address' is the address of a supported beacon client node (gRPC for Prysm, HTTP for Teku and Lighthouse).
+
+To be useful, `esd` should be supplied with the names of scripts to run when slashings are detected.  A configuration file containing this is shown below:
+
+```yaml
+eth2client:
+  address: 'localhost:5051'
+slashings:
+  attester-slashed-script: '/home/esd/scripts/attester-slashed.sh'
+  proposer-slashed-script: '/home/esd/scripts/proposer-slashed.sh'
+```
+
+These scripts are called when attester and proposer slashings are found on the beacon chain.  The scripts are passed a single argument, which is the index of the validator for which the slashing has been obtained.
 
 ## Maintainers
 
@@ -66,4 +78,4 @@ Contributions welcome. Please check out [the issues](https://github.com/attestan
 
 ## License
 
-[Apache-2.0](LICENSE) © 2021 Attestant Limited.
+[Apache-2.0](LICENSE) © 2021 - 2023 Attestant Limited.

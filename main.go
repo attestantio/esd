@@ -1,4 +1,4 @@
-// Copyright © 2021, 2022 Attestant Limited.
+// Copyright © 2021 - 2023 Attestant Limited.
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -50,7 +50,7 @@ import (
 )
 
 // ReleaseVersion is the release version for the code.
-var ReleaseVersion = "1.2.0"
+var ReleaseVersion = "1.2.1"
 
 func main() {
 	os.Exit(main2())
@@ -82,10 +82,7 @@ func main2() int {
 	logModules()
 	log.Info().Str("version", ReleaseVersion).Msg("Starting ESD")
 
-	if err := initProfiling(); err != nil {
-		log.Error().Err(err).Msg("Failed to initialise profiling")
-		return 1
-	}
+	initProfiling()
 
 	runtime.GOMAXPROCS(runtime.NumCPU() * 8)
 
@@ -172,7 +169,7 @@ func fetchConfig() error {
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+		if !errors.Is(err, &viper.ConfigFileNotFoundError{}) {
 			return errors.Wrap(err, "failed to read configuration file")
 		}
 	}
@@ -181,7 +178,7 @@ func fetchConfig() error {
 }
 
 // initProfiling initialises the profiling server.
-func initProfiling() error {
+func initProfiling() {
 	profileAddress := viper.GetString("profile-address")
 	if profileAddress != "" {
 		go func() {
@@ -196,10 +193,9 @@ func initProfiling() error {
 			}
 		}()
 	}
-	return nil
 }
 
-func startServices(ctx context.Context, monitor metrics.Service, majordomo majordomo.Service) error {
+func startServices(ctx context.Context, monitor metrics.Service, _ majordomo.Service) error {
 	log.Trace().Msg("Starting Ethereum 2 client service")
 	eth2Client, err := fetchClient(ctx, viper.GetString("eth2client.address"))
 	if err != nil {

@@ -22,40 +22,33 @@ import (
 )
 
 // OnProposerSlashed handles a proposer slashing event.
-func (s *Service) OnProposerSlashed(ctx context.Context, index spec.ValidatorIndex) error {
+func (s *Service) OnProposerSlashed(_ context.Context, index spec.ValidatorIndex) error {
 	if s.proposerSlashedScript == "" {
 		return nil
 	}
 
 	log.Trace().Str("script", s.attesterSlashedScript).Msg("Calling script")
 	// #nosec G204
-	cmd := exec.Command(s.proposerSlashedScript, fmt.Sprintf("%d", index))
-	err := cmd.Run()
+	output, err := exec.Command(s.proposerSlashedScript, fmt.Sprintf("%d", index)).CombinedOutput()
 	if err != nil {
-		if exitErr, isExitErr := err.(*exec.ExitError); isExitErr {
-			log.Warn().Str("stderr", string(exitErr.Stderr)).Msg("Run information")
-		}
+		log.Warn().Str("output", string(output)).Msg("Run information")
 	}
 
 	return err
 }
 
 // OnAttesterSlashed handles an attester slashing event.
-func (s *Service) OnAttesterSlashed(ctx context.Context, index spec.ValidatorIndex) error {
+func (s *Service) OnAttesterSlashed(_ context.Context, index spec.ValidatorIndex) error {
 	if s.attesterSlashedScript == "" {
 		return nil
 	}
 
 	log.Info().Str("script", s.attesterSlashedScript).Msg("Calling script")
 	// #nosec G204
-	cmd := exec.Command("bash", s.attesterSlashedScript, fmt.Sprintf("%d", index))
-	err := cmd.Run()
+	output, err := exec.Command(s.attesterSlashedScript, fmt.Sprintf("%d", index)).CombinedOutput()
 	if err != nil {
-		if exitErr, isExitErr := err.(*exec.ExitError); isExitErr {
-			log.Warn().Str("stderr", string(exitErr.Stderr)).Msg("Run information")
-		}
+		log.Warn().Str("output", string(output)).Msg("Run information")
 	}
 
 	return err
-
 }

@@ -25,7 +25,7 @@ import (
 // OnHeadUpdated handles head notifications.
 func (s *Service) OnHeadUpdated(
 	ctx context.Context,
-	slot spec.Slot,
+	_ spec.Slot,
 	blockRoot spec.Root,
 ) {
 	// Fetch the block.

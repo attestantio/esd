@@ -23,8 +23,10 @@ import (
 
 var metricsNamespace = "esd"
 
-var releaseMetric *prometheus.GaugeVec
-var readyMetric prometheus.Gauge
+var (
+	releaseMetric *prometheus.GaugeVec
+	readyMetric   prometheus.Gauge
+)
 
 func registerMetrics(ctx context.Context, monitor metrics.Service) error {
 	if releaseMetric != nil {
@@ -41,7 +43,7 @@ func registerMetrics(ctx context.Context, monitor metrics.Service) error {
 	return nil
 }
 
-func registerPrometheusMetrics(ctx context.Context) error {
+func registerPrometheusMetrics(_ context.Context) error {
 	startTime := prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metricsNamespace,
 		Name:      "start_time_secs",
@@ -73,13 +75,13 @@ func registerPrometheusMetrics(ctx context.Context) error {
 	return nil
 }
 
-func setRelease(ctx context.Context, release string) {
+func setRelease(_ context.Context, release string) {
 	if releaseMetric != nil {
 		releaseMetric.WithLabelValues(release).Set(1)
 	}
 }
 
-func setReady(ctx context.Context, ready bool) {
+func setReady(_ context.Context, ready bool) {
 	if readyMetric != nil {
 		if ready {
 			readyMetric.Set(1)

@@ -25,8 +25,10 @@ import (
 
 var metricsNamespace = "esd"
 
-var blocksProcessed prometheus.Gauge
-var slashings *prometheus.GaugeVec
+var (
+	blocksProcessed prometheus.Gauge
+	slashings       *prometheus.GaugeVec
+)
 
 func registerMetrics(ctx context.Context, monitor metrics.Service) error {
 	if blocksProcessed != nil {
@@ -43,7 +45,7 @@ func registerMetrics(ctx context.Context, monitor metrics.Service) error {
 	return nil
 }
 
-func registerPrometheusMetrics(ctx context.Context) error {
+func registerPrometheusMetrics(_ context.Context) error {
 	blocksProcessed = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metricsNamespace,
 		Name:      "blocks_processed_total",
@@ -65,13 +67,13 @@ func registerPrometheusMetrics(ctx context.Context) error {
 	return nil
 }
 
-func blockProcessed(ctx context.Context) {
+func blockProcessed(_ context.Context) {
 	if blocksProcessed != nil {
 		blocksProcessed.Inc()
 	}
 }
 
-func slashingFound(ctx context.Context, index spec.ValidatorIndex) {
+func slashingFound(_ context.Context, index spec.ValidatorIndex) {
 	if slashings != nil {
 		slashings.WithLabelValues(fmt.Sprintf("%d", index)).Set(1)
 	}
