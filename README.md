@@ -6,7 +6,7 @@
 ![Lint](https://github.com/attestantio/esd/workflows/golangci-lint/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/attestantio/esd)](https://goreportcard.com/report/github.com/attestantio/esd)
 
-`esd` is a process that watches slashing events included on the Ethereum 2 chain and runs a script when found.
+`esd` is a process that watches for slashing events included on the Ethereum beacon chain and runs a script when found.
 
 ## Table of Contents
 
