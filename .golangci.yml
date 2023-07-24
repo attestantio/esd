@@ -133,6 +133,7 @@ linters:
     - cyclop
     - deadcode
     - decorder
+    - depguard
     - dupl
     - errchkjson
     - exhaustive
