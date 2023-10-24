@@ -49,5 +49,6 @@ func fetchClient(ctx context.Context, address string) (eth2client.Service, error
 		}
 		clients[address] = client
 	}
+
 	return client, nil
 }

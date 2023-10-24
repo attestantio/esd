@@ -46,7 +46,7 @@ func New(ctx context.Context, params ...Parameter) (*Service, error) {
 		log = log.Level(parameters.logLevel)
 	}
 
-	s := &Service{
+	svc := &Service{
 		eth2Client:            parameters.eth2Client,
 		attesterSlashedScript: parameters.attesterSlashedScript,
 		proposerSlashedScript: parameters.proposerSlashedScript,
@@ -58,17 +58,26 @@ func New(ctx context.Context, params ...Parameter) (*Service, error) {
 		}
 	}
 
-	if err := s.eth2Client.(eth2client.EventsProvider).Events(ctx, []string{"head"}, func(event *api.Event) {
+	eventsProvider, isEventsProvider := svc.eth2Client.(eth2client.EventsProvider)
+	if !isEventsProvider {
+		return nil, errors.New("eth2 client is not an events provider")
+	}
+	if err := eventsProvider.Events(ctx, []string{"head"}, func(event *api.Event) {
 		if event.Data == nil {
 			return
 		}
 
-		eventData := event.Data.(*api.HeadEvent)
-		s.OnHeadUpdated(ctx, eventData.Slot, eventData.Block)
+		eventData, isEventData := event.Data.(*api.HeadEvent)
+		if !isEventData {
+			log.Error().Msg("event data is not from a head event; cannot process")
+			return
+		}
+
+		svc.OnHeadUpdated(ctx, eventData.Slot, eventData.Block)
 		blockProcessed(ctx)
 	}); err != nil {
 		return nil, errors.Wrap(err, "failed to configure head event feed")
 	}
 
-	return s, nil
+	return svc, nil
 }

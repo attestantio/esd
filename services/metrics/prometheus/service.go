@@ -43,7 +43,7 @@ func New(_ context.Context, params ...Parameter) (*Service, error) {
 		log = log.Level(parameters.logLevel)
 	}
 
-	s := &Service{}
+	svc := &Service{}
 
 	go func() {
 		http.Handle("/metrics", promhttp.Handler())
@@ -56,7 +56,7 @@ func New(_ context.Context, params ...Parameter) (*Service, error) {
 		}
 	}()
 
-	return s, nil
+	return svc, nil
 }
 
 // Presenter returns the presenter for the events.

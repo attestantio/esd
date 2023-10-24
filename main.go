@@ -50,7 +50,7 @@ import (
 )
 
 // ReleaseVersion is the release version for the code.
-var ReleaseVersion = "1.2.1"
+var ReleaseVersion = "1.2.2"
 
 func main() {
 	os.Exit(main2())
@@ -128,6 +128,7 @@ func main2() int {
 	}
 
 	log.Info().Msg("Stopping ESD")
+
 	return 0
 }
 
@@ -224,43 +225,49 @@ func runCommands(ctx context.Context) (bool, error) {
 	}
 
 	if viper.GetBool("test-scripts") {
-		eth2Client, err := fetchClient(ctx, viper.GetString("eth2client.address"))
-		if err != nil {
-			return false, errors.Wrap(err, fmt.Sprintf("failed to fetch client %q", viper.GetString("eth2client.address")))
-		}
-		slashings, err := headslashings.New(context.Background(),
-			headslashings.WithLogLevel(zerolog.Disabled),
-			headslashings.WithETH2Client(eth2Client),
-			headslashings.WithAttesterSlashedScript(viper.GetString("slashings.attester-slashed-script")),
-			headslashings.WithProposerSlashedScript(viper.GetString("slashings.proposer-slashed-script")),
-		)
-		if err != nil {
-			return false, errors.Wrap(err, "failed to create slashings service")
-		}
-
-		if viper.GetString("slashings.attester-slashed-script") != "" {
-			fmt.Println("Testing attester slashing script with validator index 12345678")
-			if err := slashings.OnAttesterSlashed(ctx, 12345678); err != nil {
-				fmt.Printf("Attester slashing script failed: %v\n", err)
-				return true, nil
-			}
-		} else {
-			fmt.Println("No attester slashing script")
-		}
-
-		if viper.GetString("slashings.proposer-slashed-script") != "" {
-			fmt.Println("Testing proposer slashing script with validator index 12345678")
-			if err := slashings.OnProposerSlashed(ctx, 12345678); err != nil {
-				fmt.Printf("Proposer slashing script failed: %v\n", err)
-				return true, nil
-			}
-		} else {
-			fmt.Println("No proposer slashing script")
-		}
-
-		return true, nil
+		return runTestScripts(ctx)
 	}
+
 	return false, nil
+}
+
+func runTestScripts(ctx context.Context) (bool, error) {
+	eth2Client, err := fetchClient(ctx, viper.GetString("eth2client.address"))
+	if err != nil {
+		return false, errors.Wrap(err, fmt.Sprintf("failed to fetch client %q", viper.GetString("eth2client.address")))
+	}
+
+	slashings, err := headslashings.New(ctx,
+		headslashings.WithLogLevel(zerolog.Disabled),
+		headslashings.WithETH2Client(eth2Client),
+		headslashings.WithAttesterSlashedScript(viper.GetString("slashings.attester-slashed-script")),
+		headslashings.WithProposerSlashedScript(viper.GetString("slashings.proposer-slashed-script")),
+	)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to create slashings service")
+	}
+
+	if viper.GetString("slashings.attester-slashed-script") != "" {
+		fmt.Fprintf(os.Stdout, "Testing attester slashing script with validator index 12345678\n")
+		if err := slashings.OnAttesterSlashed(ctx, 12345678); err != nil {
+			fmt.Fprintf(os.Stdout, "Attester slashing script failed: %v\n", err)
+			return true, nil
+		}
+	} else {
+		fmt.Println("No attester slashing script")
+	}
+
+	if viper.GetString("slashings.proposer-slashed-script") != "" {
+		fmt.Fprintf(os.Stdout, "Testing proposer slashing script with validator index 12345678\n")
+		if err := slashings.OnProposerSlashed(ctx, 12345678); err != nil {
+			fmt.Fprintf(os.Stdout, "Proposer slashing script failed: %v\n", err)
+			return true, nil
+		}
+	} else {
+		fmt.Fprintf(os.Stdout, "No proposer slashing script\n")
+	}
+
+	return true, nil
 }
 
 func logModules() {
@@ -268,13 +275,11 @@ func logModules() {
 	if ok {
 		log.Trace().Str("path", buildInfo.Path).Msg("Main package")
 		for _, dep := range buildInfo.Deps {
-			log := log.Trace()
-			if dep.Replace == nil {
-				log = log.Str("path", dep.Path).Str("version", dep.Version)
-			} else {
-				log = log.Str("path", dep.Replace.Path).Str("version", dep.Replace.Version)
+			path := dep.Path
+			if dep.Replace != nil {
+				path = dep.Replace.Path
 			}
-			log.Msg("Dependency")
+			log.Trace().Str("path", path).Str("version", dep.Version).Msg("Dependency")
 		}
 	}
 }
@@ -292,6 +297,7 @@ func resolvePath(path string) string {
 		}
 		baseDir = homeDir
 	}
+
 	return filepath.Join(baseDir, path)
 }
 
@@ -312,6 +318,7 @@ func startMonitor(ctx context.Context) (metrics.Service, error) {
 		log.Debug().Msg("No metrics service supplied; monitor not starting")
 		monitor = &nullmetrics.Service{}
 	}
+
 	return monitor, nil
 }
 
@@ -346,7 +353,11 @@ func initMajordomo(ctx context.Context) (majordomo.Service, error) {
 	if viper.GetString("majordomo.asm.region") != "" {
 		var asmCredentials *credentials.Credentials
 		if viper.GetString("majordomo.asm.id") != "" {
-			asmCredentials = credentials.NewStaticCredentials(viper.GetString("majordomo.asm.id"), viper.GetString("majordomo.asm.secret"), "")
+			asmCredentials = credentials.NewStaticCredentials(
+				viper.GetString("majordomo.asm.id"),
+				viper.GetString("majordomo.asm.secret"),
+				"",
+			)
 		}
 		asmConfidant, err := asmconfidant.New(ctx,
 			asmconfidant.WithLogLevel(logLevel(viper.GetString("majordomo.confidants.asm.log-level"))),

@@ -26,8 +26,8 @@ import (
 var metricsNamespace = "esd"
 
 var (
-	blocksProcessed prometheus.Gauge
-	slashings       *prometheus.GaugeVec
+	blocksProcessed prometheus.Counter
+	slashings       *prometheus.CounterVec
 )
 
 func registerMetrics(ctx context.Context, monitor metrics.Service) error {
@@ -42,11 +42,12 @@ func registerMetrics(ctx context.Context, monitor metrics.Service) error {
 	if monitor.Presenter() == "prometheus" {
 		return registerPrometheusMetrics(ctx)
 	}
+
 	return nil
 }
 
 func registerPrometheusMetrics(_ context.Context) error {
-	blocksProcessed = prometheus.NewGauge(prometheus.GaugeOpts{
+	blocksProcessed = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metricsNamespace,
 		Name:      "blocks_processed_total",
 		Help:      "Total number of blocks processed",
@@ -55,9 +56,9 @@ func registerPrometheusMetrics(_ context.Context) error {
 		return errors.Wrap(err, "failed to register blocks_processed_total")
 	}
 
-	slashings := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	slashings = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metricsNamespace,
-		Name:      "slashings",
+		Name:      "slashings_total",
 		Help:      "Register of slashings found",
 	}, []string{"index"})
 	if err := prometheus.Register(slashings); err != nil {
@@ -75,6 +76,6 @@ func blockProcessed(_ context.Context) {
 
 func slashingFound(_ context.Context, index spec.ValidatorIndex) {
 	if slashings != nil {
-		slashings.WithLabelValues(fmt.Sprintf("%d", index)).Set(1)
+		slashings.WithLabelValues(fmt.Sprintf("%d", index)).Inc()
 	}
 }
