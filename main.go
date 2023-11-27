@@ -33,10 +33,10 @@ import (
 	nullmetrics "github.com/attestantio/esd/services/metrics/null"
 	prometheusmetrics "github.com/attestantio/esd/services/metrics/prometheus"
 	headslashings "github.com/attestantio/esd/services/slashings/head"
+	"github.com/attestantio/esd/util"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/pkg/errors"
-	"github.com/rs/zerolog"
 	zerologger "github.com/rs/zerolog/log"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -50,7 +50,7 @@ import (
 )
 
 // ReleaseVersion is the release version for the code.
-var ReleaseVersion = "1.2.2"
+var ReleaseVersion = "1.2.3"
 
 func main() {
 	os.Exit(main2())
@@ -145,6 +145,7 @@ func fetchConfig() error {
 	pflag.String("slashings.attester-slashed-script", "", "Script to run when attester is slashed")
 	pflag.String("slashings.proposer-slashed-script", "", "Script to run when proposer is slashed")
 	pflag.Bool("test-scripts", false, "Test scripts using validator index 12345678 and exit")
+	pflag.String("test-block", "", "Test scripts using supplied block and exit")
 	pflag.Parse()
 	if err := viper.BindPFlags(pflag.CommandLine); err != nil {
 		return errors.Wrap(err, "failed to bind pflags to viper")
@@ -204,7 +205,7 @@ func startServices(ctx context.Context, monitor metrics.Service, _ majordomo.Ser
 	}
 
 	_, err = headslashings.New(ctx,
-		headslashings.WithLogLevel(logLevel(viper.GetString("slashings.log-level"))),
+		headslashings.WithLogLevel(util.LogLevel("slashings")),
 		headslashings.WithMonitor(monitor),
 		headslashings.WithETH2Client(eth2Client),
 		headslashings.WithAttesterSlashedScript(viper.GetString("slashings.attester-slashed-script")),
@@ -228,6 +229,10 @@ func runCommands(ctx context.Context) (bool, error) {
 		return runTestScripts(ctx)
 	}
 
+	if viper.GetString("test-block") != "" {
+		return runTestBlock(ctx)
+	}
+
 	return false, nil
 }
 
@@ -238,7 +243,7 @@ func runTestScripts(ctx context.Context) (bool, error) {
 	}
 
 	slashings, err := headslashings.New(ctx,
-		headslashings.WithLogLevel(zerolog.Disabled),
+		headslashings.WithLogLevel(util.LogLevel("slashings")),
 		headslashings.WithETH2Client(eth2Client),
 		headslashings.WithAttesterSlashedScript(viper.GetString("slashings.attester-slashed-script")),
 		headslashings.WithProposerSlashedScript(viper.GetString("slashings.proposer-slashed-script")),
@@ -265,6 +270,26 @@ func runTestScripts(ctx context.Context) (bool, error) {
 		}
 	} else {
 		fmt.Fprintf(os.Stdout, "No proposer slashing script\n")
+	}
+
+	return true, nil
+}
+
+func runTestBlock(ctx context.Context) (bool, error) {
+	eth2Client, err := fetchClient(ctx, viper.GetString("eth2client.address"))
+	if err != nil {
+		return false, errors.Wrap(err, fmt.Sprintf("failed to fetch client %q", viper.GetString("eth2client.address")))
+	}
+
+	_, err = headslashings.New(ctx,
+		headslashings.WithLogLevel(util.LogLevel("slashings")),
+		headslashings.WithETH2Client(eth2Client),
+		headslashings.WithAttesterSlashedScript(viper.GetString("slashings.attester-slashed-script")),
+		headslashings.WithProposerSlashedScript(viper.GetString("slashings.proposer-slashed-script")),
+		headslashings.WithBlock(viper.GetString("test-block")),
+	)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to create slashings service")
 	}
 
 	return true, nil
@@ -307,7 +332,7 @@ func startMonitor(ctx context.Context) (metrics.Service, error) {
 	if viper.Get("metrics.prometheus") != nil {
 		var err error
 		monitor, err = prometheusmetrics.New(ctx,
-			prometheusmetrics.WithLogLevel(logLevel(viper.GetString("metrics.prometheus.log-level"))),
+			prometheusmetrics.WithLogLevel(util.LogLevel("metrics.prometheus")),
 			prometheusmetrics.WithAddress(viper.GetString("metrics.prometheus.listen-address")),
 		)
 		if err != nil {
@@ -324,14 +349,14 @@ func startMonitor(ctx context.Context) (metrics.Service, error) {
 
 func initMajordomo(ctx context.Context) (majordomo.Service, error) {
 	majordomo, err := standardmajordomo.New(ctx,
-		standardmajordomo.WithLogLevel(logLevel(viper.GetString("majordomo.log-level"))),
+		standardmajordomo.WithLogLevel(util.LogLevel("majordomo")),
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create majordomo service")
 	}
 
 	directConfidant, err := directconfidant.New(ctx,
-		directconfidant.WithLogLevel(logLevel(viper.GetString("majordomo.confidants.direct.log-level"))),
+		directconfidant.WithLogLevel(util.LogLevel("majordomo.confidants.direct")),
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create direct confidant")
@@ -341,7 +366,7 @@ func initMajordomo(ctx context.Context) (majordomo.Service, error) {
 	}
 
 	fileConfidant, err := fileconfidant.New(ctx,
-		fileconfidant.WithLogLevel(logLevel(viper.GetString("majordomo.confidants.file.log-level"))),
+		fileconfidant.WithLogLevel(util.LogLevel("majordomo.confidants.file")),
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create file confidant")
@@ -360,7 +385,7 @@ func initMajordomo(ctx context.Context) (majordomo.Service, error) {
 			)
 		}
 		asmConfidant, err := asmconfidant.New(ctx,
-			asmconfidant.WithLogLevel(logLevel(viper.GetString("majordomo.confidants.asm.log-level"))),
+			asmconfidant.WithLogLevel(util.LogLevel("majordomo.confidants.asm")),
 			asmconfidant.WithCredentials(asmCredentials),
 			asmconfidant.WithRegion(viper.GetString("majordomo.asm.region")),
 		)
@@ -374,7 +399,7 @@ func initMajordomo(ctx context.Context) (majordomo.Service, error) {
 
 	if viper.GetString("majordomo.gsm.credentials") != "" {
 		gsmConfidant, err := gsmconfidant.New(ctx,
-			gsmconfidant.WithLogLevel(logLevel(viper.GetString("majordomo.confidants.gsm.log-level"))),
+			gsmconfidant.WithLogLevel(util.LogLevel("majordomo.confidants.gsm")),
 			gsmconfidant.WithCredentialsPath(resolvePath(viper.GetString("majordomo.gsm.credentials"))),
 			gsmconfidant.WithProject(viper.GetString("majordomo.gsm.project")),
 		)

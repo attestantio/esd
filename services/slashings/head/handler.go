@@ -31,23 +31,23 @@ func (s *Service) OnHeadUpdated(
 	// Fetch the block.
 	block, err := s.eth2Client.(eth2client.SignedBeaconBlockProvider).SignedBeaconBlock(ctx, fmt.Sprintf("%#x", blockRoot))
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to obtain block")
+		s.log.Error().Err(err).Msg("Failed to obtain block")
 		return
 	}
-	log.Trace().Str("block_root", fmt.Sprintf("%#x", blockRoot)).Msg("Obtained block")
+	s.log.Trace().Str("block_root", fmt.Sprintf("%#x", blockRoot)).Msg("Obtained block")
 
 	attesterSlashings, err := block.AttesterSlashings()
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to obtain attester slashings")
+		s.log.Error().Err(err).Msg("Failed to obtain attester slashings")
 	}
 	proposerSlashings, err := block.ProposerSlashings()
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to obtain proposer slashings")
+		s.log.Error().Err(err).Msg("Failed to obtain proposer slashings")
 	}
 
 	if len(attesterSlashings) == 0 &&
 		len(proposerSlashings) == 0 {
-		log.Trace().Msg("No slashings")
+		s.log.Trace().Msg("No slashings")
 		return
 	}
 
@@ -61,9 +61,9 @@ func (s *Service) attesterSlashings(ctx context.Context, slashings []*spec.Attes
 	for _, slashing := range slashings {
 		slashedIndices := intersection(slashing.Attestation1.AttestingIndices, slashing.Attestation2.AttestingIndices)
 		for _, validatorIndex := range slashedIndices {
-			log.Info().Uint64("validator_index", uint64(validatorIndex)).Msg("Validator slashed (attester)")
+			s.log.Info().Uint64("validator_index", uint64(validatorIndex)).Msg("Validator slashed (attester)")
 			if err := s.OnAttesterSlashed(ctx, validatorIndex); err != nil {
-				log.Error().Err(err).Msg("Failed to run script")
+				s.log.Error().Err(err).Msg("Failed to run script")
 			}
 			slashingFound(ctx, validatorIndex)
 		}
@@ -73,9 +73,9 @@ func (s *Service) attesterSlashings(ctx context.Context, slashings []*spec.Attes
 func (s *Service) proposerSlashings(ctx context.Context, slashings []*spec.ProposerSlashing) {
 	for _, slashing := range slashings {
 		validatorIndex := slashing.SignedHeader1.Message.ProposerIndex
-		log.Info().Uint64("validator_index", uint64(validatorIndex)).Msg("Validator slashed (proposer)")
+		s.log.Info().Uint64("validator_index", uint64(validatorIndex)).Msg("Validator slashed (proposer)")
 		if err := s.OnProposerSlashed(ctx, validatorIndex); err != nil {
-			log.Error().Err(err).Msg("Failed to run script")
+			s.log.Error().Err(err).Msg("Failed to run script")
 		}
 		slashingFound(ctx, validatorIndex)
 	}

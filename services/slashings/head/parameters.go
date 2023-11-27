@@ -27,6 +27,7 @@ type parameters struct {
 	monitor               metrics.Service
 	attesterSlashedScript string
 	proposerSlashedScript string
+	block                 string
 }
 
 // Parameter is the interface for service parameters.
@@ -72,6 +73,13 @@ func WithAttesterSlashedScript(script string) Parameter {
 func WithProposerSlashedScript(script string) Parameter {
 	return parameterFunc(func(p *parameters) {
 		p.proposerSlashedScript = script
+	})
+}
+
+// WithBlock sets the block to run against.
+func WithBlock(block string) Parameter {
+	return parameterFunc(func(p *parameters) {
+		p.block = block
 	})
 }
 

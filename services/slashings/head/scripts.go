@@ -28,11 +28,11 @@ func (s *Service) OnProposerSlashed(_ context.Context, index spec.ValidatorIndex
 		return nil
 	}
 
-	log.Trace().Str("script", s.attesterSlashedScript).Msg("Calling script for slashed proposer")
+	s.log.Trace().Str("script", s.attesterSlashedScript).Msg("Calling script for slashed proposer")
 	//nolint:gosec
 	output, err := exec.Command(s.proposerSlashedScript, fmt.Sprintf("%d", index)).CombinedOutput()
 	if err != nil {
-		log.Warn().Str("output", string(output)).Msg("Run information")
+		s.log.Warn().Str("output", string(output)).Msg("Run information")
 		return errors.Wrap(err, "failed to run proposer slashing script")
 	}
 
@@ -45,11 +45,11 @@ func (s *Service) OnAttesterSlashed(_ context.Context, index spec.ValidatorIndex
 		return nil
 	}
 
-	log.Info().Str("script", s.attesterSlashedScript).Msg("Calling script for slashed attester")
+	s.log.Info().Str("script", s.attesterSlashedScript).Msg("Calling script for slashed attester")
 	//nolint:gosec
 	output, err := exec.Command(s.attesterSlashedScript, fmt.Sprintf("%d", index)).CombinedOutput()
 	if err != nil {
-		log.Warn().Str("output", string(output)).Msg("Run information")
+		s.log.Warn().Str("output", string(output)).Msg("Run information")
 		return errors.Wrap(err, "failed to run attester slashing script")
 	}
 

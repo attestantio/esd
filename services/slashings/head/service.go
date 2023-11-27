@@ -1,4 +1,4 @@
-// Copyright © 2021 Attestant Limited.
+// Copyright © 2021, 2023 Attestant Limited.
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -25,13 +25,11 @@ import (
 
 // Service is slashings services that watches blocks for slashings.
 type Service struct {
+	log                   zerolog.Logger
 	eth2Client            eth2client.Service
 	attesterSlashedScript string
 	proposerSlashedScript string
 }
-
-// module-wide log.
-var log zerolog.Logger
 
 // New creates a new service.
 func New(ctx context.Context, params ...Parameter) (*Service, error) {
@@ -41,15 +39,36 @@ func New(ctx context.Context, params ...Parameter) (*Service, error) {
 	}
 
 	// Set logging.
-	log = zerologger.With().Str("service", "slashings").Str("impl", "head").Logger()
+	log := zerologger.With().Str("service", "slashings").Str("impl", "head").Logger()
 	if parameters.logLevel != log.GetLevel() {
 		log = log.Level(parameters.logLevel)
 	}
 
 	svc := &Service{
+		log:                   log,
 		eth2Client:            parameters.eth2Client,
 		attesterSlashedScript: parameters.attesterSlashedScript,
 		proposerSlashedScript: parameters.proposerSlashedScript,
+	}
+
+	if parameters.block != "" {
+		// Require running for a specific slot (for test purposes).
+		block, err := parameters.eth2Client.(eth2client.SignedBeaconBlockProvider).SignedBeaconBlock(ctx, parameters.block)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to obtain block")
+		}
+		slot, err := block.Slot()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to obtain slot")
+		}
+		root, err := block.Root()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to obtain root")
+		}
+		svc.OnHeadUpdated(ctx, slot, root)
+		// Service is not initialised, so do not return it.
+		//nolint:nilnil
+		return nil, nil
 	}
 
 	if parameters.monitor != nil {
@@ -69,7 +88,7 @@ func New(ctx context.Context, params ...Parameter) (*Service, error) {
 
 		eventData, isEventData := event.Data.(*api.HeadEvent)
 		if !isEventData {
-			log.Error().Msg("event data is not from a head event; cannot process")
+			svc.log.Error().Msg("event data is not from a head event; cannot process")
 			return
 		}
 
