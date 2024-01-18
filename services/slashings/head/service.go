@@ -1,4 +1,4 @@
-// Copyright © 2021, 2023 Attestant Limited.
+// Copyright © 2021 - 2024 Attestant Limited.
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -17,7 +17,8 @@ import (
 	"context"
 
 	eth2client "github.com/attestantio/go-eth2-client"
-	api "github.com/attestantio/go-eth2-client/api/v1"
+	"github.com/attestantio/go-eth2-client/api"
+	apiv1 "github.com/attestantio/go-eth2-client/api/v1"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	zerologger "github.com/rs/zerolog/log"
@@ -53,10 +54,19 @@ func New(ctx context.Context, params ...Parameter) (*Service, error) {
 
 	if parameters.block != "" {
 		// Require running for a specific slot (for test purposes).
-		block, err := parameters.eth2Client.(eth2client.SignedBeaconBlockProvider).SignedBeaconBlock(ctx, parameters.block)
+		signedBeaconBlockProvider, isProvider := parameters.eth2Client.(eth2client.SignedBeaconBlockProvider)
+		if !isProvider {
+			return nil, errors.New("client does not provide signed beacon blocks")
+		}
+
+		blockResponse, err := signedBeaconBlockProvider.SignedBeaconBlock(ctx, &api.SignedBeaconBlockOpts{
+			Block: parameters.block,
+		})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to obtain block")
 		}
+		block := blockResponse.Data
+
 		slot, err := block.Slot()
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to obtain slot")
@@ -81,12 +91,12 @@ func New(ctx context.Context, params ...Parameter) (*Service, error) {
 	if !isEventsProvider {
 		return nil, errors.New("eth2 client is not an events provider")
 	}
-	if err := eventsProvider.Events(ctx, []string{"head"}, func(event *api.Event) {
+	if err := eventsProvider.Events(ctx, []string{"head"}, func(event *apiv1.Event) {
 		if event.Data == nil {
 			return
 		}
 
-		eventData, isEventData := event.Data.(*api.HeadEvent)
+		eventData, isEventData := event.Data.(*apiv1.HeadEvent)
 		if !isEventData {
 			svc.log.Error().Msg("event data is not from a head event; cannot process")
 			return

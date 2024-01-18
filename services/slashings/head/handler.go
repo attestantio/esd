@@ -1,4 +1,4 @@
-// Copyright © 2021 Attestant Limited.
+// Copyright © 2021, 2024 Attestant Limited.
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -19,6 +19,7 @@ import (
 	"sort"
 
 	eth2client "github.com/attestantio/go-eth2-client"
+	"github.com/attestantio/go-eth2-client/api"
 	spec "github.com/attestantio/go-eth2-client/spec/phase0"
 )
 
@@ -29,11 +30,14 @@ func (s *Service) OnHeadUpdated(
 	blockRoot spec.Root,
 ) {
 	// Fetch the block.
-	block, err := s.eth2Client.(eth2client.SignedBeaconBlockProvider).SignedBeaconBlock(ctx, fmt.Sprintf("%#x", blockRoot))
+	blockResponse, err := s.eth2Client.(eth2client.SignedBeaconBlockProvider).SignedBeaconBlock(ctx, &api.SignedBeaconBlockOpts{
+		Block: blockRoot.String(),
+	})
 	if err != nil {
 		s.log.Error().Err(err).Msg("Failed to obtain block")
 		return
 	}
+	block := blockResponse.Data
 	s.log.Trace().Str("block_root", fmt.Sprintf("%#x", blockRoot)).Msg("Obtained block")
 
 	attesterSlashings, err := block.AttesterSlashings()

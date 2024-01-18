@@ -68,6 +68,14 @@ slashings:
 
 These scripts are called when attester and proposer slashings are found on the beacon chain.  The scripts are passed a single argument, which is the index of the validator for which the slashing has been obtained.
 
+# Testing `esd` scripts
+
+Because slashing are relatively rare it can be hard to test the scripts.  `esd` provides two startup options to help.
+
+If `esd` is started with `--test-scripts` then it will run both supplied scripts with the validator index 12345, and then exit.
+
+If `esd` is started with `--test-block 23456` then it will process the supplied block and run scripts if slashings are found.
+
 ## Maintainers
 
 Jim McDonald: [@mcdee](https://github.com/mcdee).

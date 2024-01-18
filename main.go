@@ -1,4 +1,4 @@
-// Copyright © 2021 - 2023 Attestant Limited.
+// Copyright © 2021 - 2024 Attestant Limited.
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -50,7 +50,7 @@ import (
 )
 
 // ReleaseVersion is the release version for the code.
-var ReleaseVersion = "1.2.3"
+var ReleaseVersion = "1.2.4"
 
 func main() {
 	os.Exit(main2())
@@ -80,7 +80,7 @@ func main2() int {
 	}
 
 	logModules()
-	log.Info().Str("version", ReleaseVersion).Msg("Starting ESD")
+	log.Info().Str("version", ReleaseVersion).Str("commit_hash", util.CommitHash()).Msg("Starting ESD")
 
 	initProfiling()
 
