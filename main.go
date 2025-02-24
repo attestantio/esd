@@ -1,4 +1,4 @@
-// Copyright © 2021 - 2024 Attestant Limited.
+// Copyright © 2021 - 2025 Attestant Limited.
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -50,7 +50,7 @@ import (
 )
 
 // ReleaseVersion is the release version for the code.
-var ReleaseVersion = "1.2.4"
+var ReleaseVersion = "1.3.0"
 
 func main() {
 	os.Exit(main2())
@@ -221,7 +221,7 @@ func startServices(ctx context.Context, monitor metrics.Service, _ majordomo.Ser
 // runCommands returns true if it ran a command and requests exit.
 func runCommands(ctx context.Context) (bool, error) {
 	if viper.GetBool("version") {
-		fmt.Printf("%s\n", ReleaseVersion)
+		fmt.Fprintf(os.Stdout, "%s\n", ReleaseVersion)
 		return true, nil
 	}
 
@@ -259,7 +259,7 @@ func runTestScripts(ctx context.Context) (bool, error) {
 			return true, nil
 		}
 	} else {
-		fmt.Println("No attester slashing script")
+		fmt.Fprintln(os.Stderr, "No attester slashing script")
 	}
 
 	if viper.GetString("slashings.proposer-slashed-script") != "" {
@@ -269,7 +269,7 @@ func runTestScripts(ctx context.Context) (bool, error) {
 			return true, nil
 		}
 	} else {
-		fmt.Fprintf(os.Stdout, "No proposer slashing script\n")
+		fmt.Fprintln(os.Stderr, "No proposer slashing script")
 	}
 
 	return true, nil
