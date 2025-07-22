@@ -78,7 +78,7 @@ If `esd` is started with `--test-block 23456` then it will process the supplied 
 
 ## Maintainers
 
-Jim McDonald: [@mcdee](https://github.com/mcdee).
+Chris Berry: [@bez625](https://github.com/Bez625).
 
 ## Contribute
 
