@@ -5,7 +5,7 @@ go 1.23.0
 toolchain go1.23.2
 
 require (
-	github.com/attestantio/go-eth2-client v0.24.0
+	github.com/attestantio/go-eth2-client v0.27.1
 	github.com/aws/aws-sdk-go v1.55.6
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.9.1

@@ -91,19 +91,13 @@ func New(ctx context.Context, params ...Parameter) (*Service, error) {
 	if !isEventsProvider {
 		return nil, errors.New("eth2 client is not an events provider")
 	}
-	if err := eventsProvider.Events(ctx, []string{"head"}, func(event *apiv1.Event) {
-		if event.Data == nil {
-			return
-		}
-
-		eventData, isEventData := event.Data.(*apiv1.HeadEvent)
-		if !isEventData {
-			svc.log.Error().Msg("event data is not from a head event; cannot process")
-			return
-		}
-
-		svc.OnHeadUpdated(ctx, eventData.Slot, eventData.Block)
+	headEventFunc := func(ctx context.Context, event *apiv1.HeadEvent) {
+		svc.OnHeadUpdated(ctx, event.Slot, event.Block)
 		blockProcessed(ctx)
+	}
+	if err := eventsProvider.Events(ctx, &api.EventsOpts{
+		Topics:      []string{"head"},
+		HeadHandler: headEventFunc,
 	}); err != nil {
 		return nil, errors.Wrap(err, "failed to configure head event feed")
 	}
